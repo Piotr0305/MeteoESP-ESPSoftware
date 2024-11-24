@@ -3,9 +3,8 @@ const char* input_password_parameter = "input_password";
 const char* input_http_enabled_parameter = "input_http_enabled";
 const char* input_server_url_parameter = "input_server";
 const char* input_db_user_parameter = "input_db_user";
-const char* input_db_password_parameter = "input_db_password";
+const char* input_meteoesp_api_key_parameter = "input_meteoesp_api_key";
 const char* input_working_mode_parameter = "input_working_mode";
-// const char* input_pms_always_active_parameter = "input_pms_always_active";
 const char* input_idle_delay_parameter = "input_idle_delay";
 const char* input_value_change_temperature_parameter = "input_value_change_temperature";
 const char* input_value_change_humidity_parameter = "input_value_change_humidity";
@@ -16,10 +15,14 @@ const char* input_mqtt_broker_port_parameter = "input_broker_port";
 const char* input_mqtt_user_parameter = "input_mqtt_user";
 const char* input_mqtt_password_parameter = "input_mqtt_password";
 const char* input_channel_number_parameter = "input_channel_number";
-const char* input_api_key_parameter = "input_api_key";
+const char* input_thinkspeak_api_key_parameter = "input_thinkspeak_api_key";
 const char* input_thingspeak_enabled_parameter = "input_thingspeak_enabled";
+const char* input_sensor_fail_behaviour_parameter = "input_sensor_fail_behaviour";
+const char* input_ds18b20_status_parameter = "input_ds18b20_status";
 const char* input_htu21d_status_parameter = "input_htu21d_status";
 const char* input_bmp180_status_parameter = "input_bmp180_status";
+const char* input_pms5003_status_parameter = "input_pms5003_status";
+const char* input_pms_sensor_always_active_parameter = "input_pms_sensor_always_active";
 const char* input_anemometer_enabled_parameter = "input_anemometer_enabled";
 const char* input_rain_gauge_enabled_parameter = "input_rain_gauge_enabled";
 const char* input_temperature_sensor_priority_parameter = "input_temperature_sensor_priority";
@@ -67,7 +70,7 @@ const char htmlFirstConfigSite[] PROGMEM = R"rawliteral(
     <body>
       <div class="container">
         <h2>Configure MeteoESP</h2>
-        <form action="/get">
+        <form action="/wifi_settings_get">
           <label>SSID</label> <br>
           <input type="text" name="input_ssid"> <br>
           <label>Password</label> <br>
@@ -435,12 +438,12 @@ const char htmlSettingsMenu[] PROGMEM = R"rawliteral(
         <div class="buttons">
           <a href=wifi_settings><button class="blue">WiFi Settings</button></a> <br>
           <a href=sensors_settings><button class="blue">Sensors Settings</button></a> <br>
-          <a href=http_settings><button class="blue">HTML Server Settings</button></a> <br>
+          <a href=http_settings><button class="blue">MeteoESP Server Settings</button></a> <br>
           <a href=mqtt_settings><button class="blue">MQTT Settings</button></a> <br>
           <a href=thingspeak_settings><button class="blue">ThingSpeak Settings</button></a> <br>
           <a href=working_mode_settings><button class="blue">Working Mode Settings</button></a> <br>
           <a href=power_settings><button class="blue">Power Settings</button></a> <br>
-          <a href=update><button class="blue">Update (ElegantOTA)</button></a> <br>
+          <a href=update><button class="blue">Firmware Update</button></a> <br>
           <a href=factory_reset><button class="red">FACTORY RESET</button></a> <br>
         </div>
       </div>
@@ -543,7 +546,18 @@ const char htmlSensorsSettingsMenu[] PROGMEM = R"rawliteral(
       <div class="container">
         <h2>MeteoESP Sensors Settings</h2>
         <form action="/sensors_settings_get">
+          <label>On sensor failure:</label> <br>
+          <select name="input_sensor_fail_behaviour">
+          <option value="0">Ignore</option>
+          <option value="1">Call a critical stop</option>
+          </select> <br>
           <h3>Auto detectable sensors</h3>
+          <label>DS18B20 Status</label> <br>
+          <select name="input_ds18b20_status">
+          <option value="0">Auto-detect</option>
+          <option value="1">Enabled</option>
+          <option value="2">Disabled</option>
+          </select> <br>
           <label>HTU21D Status</label> <br>
           <select name="input_htu21d_status">
           <option value="0">Auto-detect</option>
@@ -556,6 +570,14 @@ const char htmlSensorsSettingsMenu[] PROGMEM = R"rawliteral(
           <option value="1">Enabled</option>
           <option value="2">Disabled</option>
           </select> <br>
+          <label>PMS5003 Status</label> <br>
+          <select name="input_pms5003_status">
+          <option value="0">Auto-detect</option>
+          <option value="1">Enabled</option>
+          <option value="2">Disabled</option>
+          </select> <br>
+          <label>PM Sensor always active</label>
+          <input type="checkbox" name="input_pms_sensor_always_active" checked> <br>
           <h3>Non-auto detectable sensors</h3>
           <label>Anemometer</label>
           <input type="checkbox" name="input_anemometer_enabled" checked> <br>
@@ -576,7 +598,7 @@ const char htmlHttpSettingsMenu[] PROGMEM = R"rawliteral(
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>HTML Server Settings - MeteoESP</title>
+      <title>MeteoESP Server Settings - MeteoESP</title>
       <style>
         * {
           font-family: Arial, Helvetica, sans-serif;
@@ -610,16 +632,14 @@ const char htmlHttpSettingsMenu[] PROGMEM = R"rawliteral(
     </head>
     <body>
       <div class="container">
-        <h2>MeteoESP HTML Server Settings</h2>
+        <h2>MeteoESP MeteoESP Server Settings</h2>
         <form action="/http_settings_get">
-          <label>HTML Server Sending</label>
+          <label>MeteoESP Server Sending</label>
           <input type="checkbox" name="input_http_enabled" checked> <br>
           <label>Server path</label> <br>
           <input type="text" name="input_server"> <br>
-          <label>DB User</label> <br>
-          <input type="text" name="input_db_user"> <br>
-          <label>DB Password</label> <br>
-          <input type="text" name="input_db_password"> <br>
+          <label>API Key</label> <br>
+          <input type="text" name="input_meteoesp_api_key"> <br>
           <input class="button" type="submit" value="Save!">
         </form>
       </div>
@@ -733,7 +753,7 @@ const char htmlThingSpeakSettingsMenu[] PROGMEM = R"rawliteral(
           <label>ThingSpeak Channel Number</label> <br>
           <input type="text" name="input_channel_number" min="1" max="9"> <br>
           <label>ThingSpeak API Key</label> <br>
-          <input type="text" name="input_api_key"> <br>
+          <input type="text" name="input_thinkspeak_api_key"> <br>
           <input class="button" type="submit" value="Connect!">
         </form>
       </div>
@@ -852,6 +872,173 @@ const char htmlPowerSettingsMenu[] PROGMEM = R"rawliteral(
           <input type="checkbox" name="input_battery_power_enabled" checked> <br>
           <input class="button" type="submit" value="Save!">
         </form>
+      </div>
+    </body>
+  </html>
+)rawliteral";
+
+const char htmlFirmwareUpdateMenu[] PROGMEM = R"rawliteral(
+  <!DOCTYPE HTML>
+  <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Firmware Update - MeteoESP</title>
+      <style>
+        * {
+          font-family: Arial, Helvetica, sans-serif;
+        }
+        body {
+          background-color: #222222;
+          color: #ffffff;
+        }
+        .button {
+          margin-top: 5px;
+        }
+        h2 {
+          text-align: center;
+        }
+        text {
+          text-align: center;
+        }
+        .container {
+          max-width: 500px;
+          margin: 0px auto;
+        }
+        .button {
+          width: 250px;
+          border: 0px;
+          color: white;
+          border-radius: 3px;
+          padding: 4px;
+          background-color: #0099ff;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h2>MeteoESP Firmware Update</h2>
+        <form method="POST" action="/start_firmware_update" enctype="multipart/form-data">
+          <label>Select firmware file</label> <br>
+          <input type="file" name="update_file">
+          <input class="button" type="submit" value="Update">
+        </form>
+      </div>
+    </body>
+  </html>
+)rawliteral";
+
+const char htmlFirmwareUpdateSuccess[] PROGMEM = R"rawliteral(
+  <!DOCTYPE HTML>
+  <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Success!</title>
+      <style>
+        * {
+          font-family: Arial, Helvetica, sans-serif;
+        }
+        body {
+          background-color: #222222;
+          color: #ffffff;
+        }
+        h2 {
+          text-align: center;
+        }
+        h3 {
+          text-align: center;
+        }
+        .sensor-data {
+          text-align: center;
+        }
+        .container {
+          max-width: 500px;
+          position: relative;
+          margin: 0px auto;
+        }
+        .buttons {
+          width: 250px;
+          margin: 0px auto;
+        }
+        button {
+          width: 250px;
+          border: 0px;
+          color: white;
+          margin: 3px 0px;
+          border-radius: 3px;
+          padding: 4px;
+        }
+        .red {
+          background-color: #ff0000;
+        }
+        .blue {
+          background-color: #0099ff;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h2>Success!</h2>
+        <p>Device updated successfuly! Restarting...</p>
+      </div>
+    </body>
+  </html>
+)rawliteral";
+
+const char htmlFirmwareUpdateFail[] PROGMEM = R"rawliteral(
+  <!DOCTYPE HTML>
+  <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Fail!</title>
+      <style>
+        * {
+          font-family: Arial, Helvetica, sans-serif;
+        }
+        body {
+          background-color: #222222;
+          color: #ffffff;
+        }
+        h2 {
+          text-align: center;
+        }
+        h3 {
+          text-align: center;
+        }
+        .sensor-data {
+          text-align: center;
+        }
+        .container {
+          max-width: 500px;
+          position: relative;
+          margin: 0px auto;
+        }
+        .buttons {
+          width: 250px;
+          margin: 0px auto;
+        }
+        button {
+          width: 250px;
+          border: 0px;
+          color: white;
+          margin: 3px 0px;
+          border-radius: 3px;
+          padding: 4px;
+        }
+        .red {
+          background-color: #ff0000;
+        }
+        .blue {
+          background-color: #0099ff;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h2>Failed!</h2>
+        <p>Device updating failed! Restarting...</p>
       </div>
     </body>
   </html>
